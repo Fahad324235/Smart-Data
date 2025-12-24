@@ -3,1090 +3,369 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Pk Movies</title>
+    <title>Smart Data</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 
     <style>
-       
-     body {
-            font-family: Arial, sans-serif;
-            background: linear-gradient(135deg, #1a1a1a, #101020);
-            color: #fff;
-            margin: 0;
-            padding: 0 0 60px 0; /* 60px padding for fixed bottom bar */
-        }
+        body { font-family: 'Poppins', sans-serif; background: linear-gradient(135deg, #1a1a1a, #101020); color: #fff; margin: 0; padding: 0 0 70px 0; overflow-x: hidden; }
+        .header { background-color: #0d0d1a; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; border-bottom: 1px solid #333; }
+        .header-left { display: flex; align-items: center; gap: 15px; }
+        .menu-btn { font-size: 24px; cursor: pointer; color: #fff; }
+        .header h1 { margin: 0; background: linear-gradient(90deg, #ff4d4d, #ff8c1a); -webkit-background-clip: text; color: transparent; font-size: 22px; font-weight: bold; }
 
-        .header {
-            background-color: #0d0d1a;
-            padding: 15px 20px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            position: sticky; 
-            top: 0;
-            z-index: 30;
-        }
-
-        .header h1 {
-            margin: 0;
-            padding: 0;
-            background: linear-gradient(90deg, #ff4d4d, #ff8c1a);
-            -webkit-background-clip: text;
-            color: transparent;
-            font-size: 32px;
-            cursor: pointer; /* ✅ تبدیلی 1.1: کرسر کو پوائینٹر بنایا گیا */
-        }
-
-       #searchBar {
-            padding: 8px 1px;
-            border: 1px solid #ff8c1a;
-            border-radius: 1px;
-            background-color: #2a2a2a;
-            color: #fff;
-            width: 200px;
-            outline: none;
-        }
-        #searchBar:focus {
-            width: 200px;
-        }
-
-       .movie-grid {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr) !important;
-        gap: 15px;
-        padding: 20px;
-        }
+        /* Sidebar */
+        #sideMenu { position: fixed; top: 0; left: -280px; width: 280px; height: 100%; background: #1e1e2d; z-index: 2000; transition: 0.3s; padding-top: 20px; overflow-y: auto; }
+        #sideMenu.active { left: 0; }
         
-        @media (max-width: 600px) {
-            .header {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-            #searchBar {
-                width: 100%;
-                margin-top: 10px;
-            }
-            .movie-grid {
-                grid-template-columns: 1fr; 
-            }
-            /* Adjusted for Category Overlay on small screens */
-            .categories-content {
-                max-width: 100%; /* Full width */
-                margin: 0;
-                height: auto; /* موبائل پر کیٹگری اوورلے کی اونچائی کم کرنے کے لیے */
-                border-radius: 0;
-                padding: 20px 10px;
-            }
-            #categoriesOverlay {
-                padding: 0;
-            }
-        }
+        .side-title { padding: 15px 25px; font-size: 14px; color: #ff8c1a; text-transform: uppercase; font-weight: bold; border-bottom: 1px solid #333; margin-top: 10px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
         
-        /* 🎨 UPDATED MOVIE CARD STYLES */
-        .movie-card {
-            background: #1f1f2e; /* Darker background for the entire card */
-            border-radius: 2px; /* Smoother, larger corners */
-            overflow: hidden;
-            cursor: pointer;
-            transition: transform 0.3s, box-shadow 0.3s;
-            position: relative;
-            display: flex;
-            flex-direction: column;
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5); /* Stronger shadow for depth */
-            border: 1px solid #333;
-        }
-
-        .movie-card:hover {  
-            transform: translateY(-5px) scale(1.02); /* Slight lift on hover */  
-            border-color: #ff4d4d;  
-            box-shadow: 0 10px 25px rgba(255, 77, 77, 0.4);   
-        }  
-
-        .movie-card img {  
-            width: 100%;  
-            /* Height set to a fixed ratio for consistency */  
-            aspect-ratio: 3/4;   
-            object-fit: cover;   
-            background-color: #000;   
-            flex-shrink: 0;   
-            border-top-left-radius: 12px; /* Match card radius */  
-            border-top-right-radius: 12px;  
-        }  
-
-        .movie-card p {  
-            padding: 10px 10px 5px 10px; /* Padding adjustment */  
-            text-align: left; /* Aligned left for better readability */  
-            font-size: 18px; /* Slightly larger title */  
-            font-weight: 900; /* Extra bold */  
-            color: #fff;  
-            margin: 0;  
-            white-space: nowrap;  
-            overflow: hidden;  
-            text-overflow: ellipsis; /* For long titles */  
-        }  
-          
-        /* 🎨 UPDATED CATEGORY BADGE STYLES */  
-        .category-badge {  
-            background: none;   
-            color: #ff8c1a; /* Category color */  
-            padding: 0 10px 10px 10px; /* Padding for bottom of card */  
-            border-radius: 0;  
-            font-size: 12px;   
-            font-weight: bold;  
-            display: block; /* Takes full width */  
-            text-align: left;  
-        }
-
-
-        /* Pagination & Loading Spinner Styles (Unchanged) */
-        .pagination-controls { display: flex; justify-content: center; gap: 20px; padding: 20px; }
-        .page-btn { background: #ff4d4d; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; transition: background 0.2s; }
-        .page-btn:hover:not(:disabled) { background: #cc0000; }
-        .page-btn:disabled { background: #444; cursor: not-allowed; color: #888; }
-        #loadingSpinner { display: none; text-align: center; padding: 50px; }
-        .spinner { border: 8px solid #333; border-top: 8px solid #ff8c1a; border-radius: 50%; width: 60px; height: 60px; animation: spin 1s linear infinite; margin: 20px auto; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
-
-        /* MOVIE DETAIL POPUP styles (Crucial for display) */
-        .movie-detail { 
-            display: none; 
-            position: fixed; 
-            inset: 0; 
-            background: rgba(0,0,0,0.85); 
-            backdrop-filter: blur(3px); 
-            padding: 20px; 
-            overflow-y: auto; 
-            z-index: 40; 
-        }
-        .detail-content { max-width: 600px; margin: 50px auto; background: #2a2a2a; padding: 20px; border-radius: 12px; position: relative; animation: pop 0.3s ease; }
-        @keyframes pop { 0% { transform: scale(0.7); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
-        .detail-content img { width: 100%; border-radius: 10px; margin-top: 50px; }
-        .detail-close-top { position: absolute; top: 8px; right: 8px; background: #ff0033; color: #fff; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 16px; z-index: 999; }
+        #dynamicCategories { display: none; background: #161625; transition: 0.3s; }
+        #dynamicCategories.show { display: block; }
         
-        /* Buttons */
-        .btn-box { 
-            display: flex; 
-            gap: 10px; 
-            margin-top: 20px; 
-            flex-wrap: wrap; 
-        }
-        .btn { 
-            flex: 1; 
-            padding: 12px; 
-            background: #ff9800; 
-            color: #000; 
-            border-radius: 8px; 
-            text-align: center; 
-            font-weight: bold; 
-            cursor: pointer; 
-            text-decoration: none; 
-            transition: 0.2s;
-            min-width: 120px; 
-        }
-        .btn:hover { background: #ffc266; }
-        /* Style for Favorite Button */
-        #favoriteBtn {
-            background: #e91e63; 
-            color: white;
-            font-size: 14px;
-        }
-        #favoriteBtn.added {
-            background: #00e676; 
-        }
-        #favoriteBtn:hover {
-             background: #c2185b;
-        }
+        .side-link { padding: 12px 25px; color: #ddd; display: flex; align-items: center; gap: 15px; border-bottom: 1px solid #222; cursor: pointer; text-decoration: none; font-size: 14px; }
+        .side-link:hover { background: #252538; }
         
-        /* 🆕 Info Box for Genres/Year */
-        #modalInfo {
-            margin-top: 15px;
-            padding: 10px;
-            background-color: #333;
-            border-radius: 8px;
-            font-size: 14px;
-        }
-        #modalInfo span {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-            color: #ffc107;
+        .fa-chevron-down { transition: transform 0.3s; font-size: 12px; }
+        .rotate { transform: rotate(180deg); }
+
+        .side-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 1900; display: none; }
+        .side-overlay.active { display: block; }
+
+        /* Movie Grid */
+        .movie-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 10px; }
+        .movie-card { background: #1f1f2e; border-radius: 8px; overflow: hidden; border: 1px solid #333; transition: transform 0.2s; }
+        .movie-card:active { transform: scale(0.95); }
+        .movie-card img { width: 100%; aspect-ratio: 16/9; object-fit: cover; display: block; }
+        .movie-card p { padding: 8px 8px 2px 8px; font-size: 11px; font-weight: bold; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .category-badge { color: #ff8c1a; padding: 0 8px 8px 8px; font-size: 9px; display: block; opacity: 0.8; }
+
+        /* Pagination Styling */
+        .pagination-container { display: flex; justify-content: center; align-items: center; gap: 15px; padding: 20px 0; margin-bottom: 20px; }
+        .page-btn { background: linear-gradient(90deg, #ff4d4d, #ff8c1a); color: white; border: none; padding: 8px 20px; border-radius: 50px; font-weight: bold; cursor: pointer; transition: 0.3s; font-size: 13px; }
+        .page-btn:disabled { background: #333; color: #777; cursor: not-allowed; }
+        #pageNumber { font-size: 14px; font-weight: bold; color: #ff8c1a; }
+
+        /* Smooth Animation for Page Change */
+        .fade-anim { animation: fadeInUp 0.6s ease-out; }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
-        /* Episode List Specific Styles */
-        #episodeList {
-            margin-top: 15px;
-            padding: 10px;
-            border-radius: 8px;
-            background-color: #333;
-        }
-        .episode-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px 0;
-            border-bottom: 1px solid #444;
-        }
-        .episode-item:last-child {
-            border-bottom: none;
-        }
-        .ep-title {
-            color: #ddd;
-            font-size: 16px;
-            flex-grow: 1; 
-        }
-        .ep-actions {
-             display: flex;
-             gap: 10px;
-        }
-        .ep-play-btn, .ep-download-btn {
-            background: #00bcd4;
-            color: white;
-            padding: 6px 15px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: background 0.2s;
-            text-decoration: none; 
-            display: inline-block;
-        }
-        .ep-play-btn:hover { background: #0097a7; }
-        .ep-download-btn { background: #4caf50; }
-        .ep-download-btn:hover { background: #388e3c; }
+        /* Modal */
+        .movie-detail { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); padding: 20px; z-index: 3000; overflow-y: auto; }
+        .detail-content { max-width: 500px; margin: 40px auto; background: #2a2a2a; padding: 20px; border-radius: 12px; position: relative; }
+        .close-btn { position: absolute; top: -45px; right: 0; font-size: 40px; color: #ff4d4d; cursor: pointer; }
+        #inModalPlayerContainer { width: 100%; margin-bottom: 15px; display: none; }
+        #inModalVideoPlayer { width: 100%; border-radius: 8px; aspect-ratio: 16/9; }
+        #modalImg { width:100%; border-radius:8px; aspect-ratio: 16/9; object-fit: cover; }
+        .btn { width: 100%; padding: 12px; margin-top: 10px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
 
-
-        /* VIDEO POPUP styles (Unchanged) */
-        #videoPopup { 
-            position: fixed; 
-            inset: 0; 
-            background: rgba(0,0,0,0.90); 
-            display: none; 
-            justify-content: center; 
-            align-items: center; 
-            z-index: 99999; 
-            flex-direction: column; 
-        }
-        #closeVideo { 
-            position: relative; 
-            margin-bottom: 15px; 
-            background: red; 
-            color: #fff; 
-            padding: 10px 25px; 
-            font-size: 16px; 
-            font-weight: bold; 
-            border-radius: 2px; 
-            cursor: pointer; 
-            z-index: 100000; 
-        }
-        #videoContainer { 
-            width: 92%; 
-            max-width: 900px; 
-            border-radius: 0px; 
-            overflow: hidden; 
-            background: #000; 
-            position: relative; 
-            border: 1px solid #ffffff; 
-        }
-        video { width: 100%; height: auto; }
-        
-        /* Ad Pop-up Styles (Crucial: Display is 'none' initially) */
-        #adPopup { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.95); display: none; justify-content: center; align-items: center; z-index: 100000; padding: 20px; }
-        #adIframeContainer { width: 90%; height: 90%; max-width: 900px; max-height: 700px; position: relative; }
+        /* Ad Popup */
+        #adPopup { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.95); display: none; justify-content: center; align-items: center; z-index: 10000; }
+        #adIframeContainer { width: 100%; height: 100%; position: relative; border-radius: 10px; overflow: hidden; }
         #adIframe { width: 100%; height: 100%; border: none; }
-        #adTimer { position: absolute; top: 10px; right: 10px; background: rgba(0, 0, 0, 0.7); color: white; padding: 5px 10px; border-radius: 5px; font-size: 18px; z-index: 100001; }
+        #adTimer { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.8); color: white; padding: 5px 15px; border-radius: 20px; font-size: 14px; font-weight: bold; }
+
+        /* Bottom Nav */
+        #bottomNav { position: fixed; bottom: 0; width: 100%; height: 65px; background: #1e1e2d; display: flex; border-top: 2px solid #ff8c1a; z-index: 1000; }
+        .nav-item-btn { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #aaa; cursor: pointer; }
+        .nav-item-btn.active { color: #ff8c1a; }
+        .nav-item-btn i { font-size: 18px; }
+        .nav-item-btn span { font-size: 9px; margin-top: 4px; }
         
-        /* Fixed Bottom Navigation Bar Styles (Unchanged) */
-        #bottomNav {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 60px;
-            background-color: #1e1e2d;
-            box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.5);
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            z-index: 50; 
-            border-top: 2px solid #ff8c1a;
-        }
-        .nav-item-btn {
-            color: #aaa;
-            text-align: center;
-            cursor: pointer;
-            padding: 5px;
-            transition: color 0.3s, transform 0.2s;
-            flex-grow: 1;
-        }
-        .nav-item-btn:hover {
-            color: #fff;
-        }
-        .nav-item-btn.active {
-            color: #ff8c1a;
-            transform: scale(1.1);
-        }
-        .nav-item-btn i {
-            font-size: 20px;
-            display: block;
-            margin-bottom: 2px;
-        }
-        .nav-item-btn span {
-            font-size: 12px;
-            font-weight: bold;
-        }
-        
-        /* Categories Overlay Pop-up (Updated Styles) */
-        #categoriesOverlay {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.95);
-            z-index: 70;
-            padding: 20px;
-            overflow-y: auto;
-        }
-        .categories-content {
-            max-width: 800px; /* Increased Max Width */
-            width: 90%; /* Added width for responsiveness */
-            margin: 50px auto;
-            background: #2a2a2a;
-            padding: 20px;
-            border-radius: 12px;
-            position: relative;
-            animation: pop 0.3s ease;
-        }
-        .categories-content h2 {
-            color: #ff8c1a;
-            text-align: center;
-            border-bottom: 2px solid #ff8c1a;
-            padding-bottom: 10px;
-            margin-bottom: 20px;
-        }
-        .category-list {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-            gap: 15px;
-            text-align: center;
-        }
-        .category-item-btn {
-            background: #444;
-            color: white;
-            padding: 15px 10px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: background 0.2s, transform 0.2s;
-            font-size: 10px;
-        }
-        .category-item-btn:hover {
-            background: #ff4d4d;
-            transform: translateY(-3px);
-        }
+        .spinner { border: 4px solid #333; border-top: 4px solid #ff8c1a; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 20px auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
+<body>
 
-<body> 
-<div class="header" id="pageHeader">
-    <h1 onclick="loadAllMovies()">Pk Movies</h1> <input type="text" id="searchBar" onkeyup="filterMovies()" placeholder="Search Movie...">
+<div class="side-overlay" onclick="toggleSideMenu()"></div>
+<div id="sideMenu">
+    <div class="side-title" style="cursor: default;">Shortcuts</div>
+    <div class="side-link" onclick="handleNavClick('popular', null); toggleSideMenu()">
+        <i class="fas fa-star" style="color: gold;"></i> Popular Content
+    </div>
+    
+    <div class="side-title" onclick="toggleCategoryMenu()">
+        <span>All Categories</span>
+        <i class="fas fa-chevron-down" id="catArrow"></i>
+    </div>
+    <div id="dynamicCategories"></div>
 </div>
 
+<div class="header">
+    <div class="header-left">
+        <i class="fas fa-bars menu-btn" onclick="toggleSideMenu()"></i>
+        <h1 onclick="window.location.reload()">Smart Data</h1>
+    </div>
+</div>
 
-<div id="loadingSpinner">
+<div id="loadingSpinner" style="display:none; text-align:center; padding:50px;">
     <div class="spinner"></div>
-    <p>Loading...</p>
 </div>
 
 <div id="movieGrid" class="movie-grid"></div>
 
-<div class="pagination-controls">
-    <button id="prevBtn" class="page-btn" onclick="goToPage(-1)">Previous</button>
-    <button id="nextBtn" class="page-btn" onclick="goToPage(1)">Next</button>
+<div class="pagination-container">
+    <button id="prevBtn" class="page-btn" onclick="changePage(-1)">
+        <i class="fas fa-chevron-left"></i> Back
+    </button>
+    <span id="pageNumber">1</span>
+    <button id="nextBtn" class="page-btn" onclick="changePage(1)">
+        Next <i class="fas fa-chevron-right"></i>
+    </button>
 </div>
 
 <div id="modal" class="movie-detail">
     <div class="detail-content">
-
-        <div class="detail-close-top" onclick="closeDetail()">Close</div>
-
+        <span class="close-btn" onclick="closeDetail()">&times;</span>
+        <div id="inModalPlayerContainer">
+            <video id="inModalVideoPlayer" controls playsinline></video>
+        </div>
         <img id="modalImg" src="">
-        <h2 id="modalTitle"></h2>
-        <div id="modalInfo">
-            <span id="modalYear">Year: N/A</span>
-            <span id="modalGenres">Genres: N/A</span>
-        </div>
-        <p id="modalDesc"></p>
-
-        <div id="seriesEpisodeContainer" style="display: none;">
-            <h3>Episodes:</h3>
-             <label for="seasonSelect" style="display: block; margin-top: 10px;">Select Season:</label>
-            <select id="seasonSelect" onchange="displaySeasonEpisodes(this.value)" style="width: 100%; padding: 8px; margin-bottom: 10px;"></select>
-            
-            <div id="episodeList">
-            </div>
-        </div>
-        
-        <div id="movieLinksContainer" class="btn-box" style="display: none;">
-            <button id="favoriteBtn" class="btn" data-key=""> Add to Favorites</button>
-            <button id="playBtn" class="btn">Play Movie</button>
-            <button id="downloadBtn" class="btn">Download</button> 
-        </div>
-    </div>
-</div>
-
-<div id="videoPopup">
-<div id="closeVideo" onclick="closeVideo()">Close</div> 
-    <div id="videoContainer">
-                <video 
-            id="videoPlayer"
-            controls
-            autoplay
-            playsinline
-            preload="auto">
-            
-            <source id="videoSource" src="#">
-        </video>
+        <h2 id="modalTitle" style="text-align:center; margin:15px 0; font-size: 18px;"></h2>
+        <button id="playBtn" class="btn" style="background:#ff4d4d; color:white;">Play Video</button>
+        <button id="downloadBtn" class="btn" style="background:#3f51b5; color:white;">Download</button>
+        <button id="otherDownloadBtn" class="btn" style="background:#009688; color:white; display:none;">Full Video</button>
+        <button id="favoriteBtn" class="btn" style="background:#e91e63; color:white;">Add to Favorites</button>
     </div>
 </div>
 
 <div id="adPopup">
     <div id="adIframeContainer">
-        <span id="adTimer">0</span>
-        <iframe id="adIframe"></iframe>
+        <div id="adTimer">10</div>
+        <iframe id="adIframe" src=""></iframe>
     </div>
 </div>
-
 
 <div id="bottomNav">
-    <div class="nav-item-btn active" data-target="all" onclick="loadAllMovies(this)">
-        <i class="fas fa-home"></i>
-        <span>Home</span>
+    <div class="nav-item-btn active" onclick="handleNavClick('all', this)">
+        <i class="fas fa-home"></i> <span>Home</span>
     </div>
-    <div class="nav-item-btn" data-target="categories" onclick="showCategoriesOverlay(this)">
-        <i class="fas fa-tags"></i>
-        <span>Categories</span>
+    <div class="nav-item-btn" onclick="handleNavClick('Desi', this)">
+        <i class="fas fa-video"></i> <span>Desi</span>
     </div>
-    <div class="nav-item-btn" data-target="movie" onclick="setFilter('movie', this)">
-        <i class="fas fa-film"></i>
-        <span>Movies</span>
+    <div class="nav-item-btn" onclick="handleNavClick('Boy', this)">
+        <i class="fas fa-male"></i> <span>Boy</span>
     </div>
-    <div class="nav-item-btn" data-target="series" onclick="setFilter('series', this)">
-        <i class="fas fa-tv"></i>
-        <span>Web Series</span>
+    <div class="nav-item-btn" onclick="handleNavClick('Girl', this)">
+        <i class="fas fa-female"></i> <span>Girl</span>
     </div>
-    <div class="nav-item-btn" data-target="favorites" onclick="setFilter('favorites', this)">
-        <i class="fas fa-heart"></i>
-        <span>Favorites</span>
+    <div class="nav-item-btn" onclick="handleNavClick('favorites', this)">
+        <i class="fas fa-heart"></i> <span>Favorites</span>
     </div>
 </div>
-
-<div id="categoriesOverlay" onclick="if(event.target.id === 'categoriesOverlay') closeCategoriesOverlay()">
-    <div class="categories-content">
-        <h2>Select Category</h2>
-        <div id="categoryListOverlay" class="category-list">
-            <p style="text-align: center; color:#ccc;">Loading categories...</p>
-        </div>
-    </div>
-</div>
-
 
 <script>
-    // 2. Firebase Configuration
     const firebaseConfig = {
-        apiKey: "AIzaSyAJV7KSXkJ4E_p9Aa6iS84d0sqww1Fj6O0",
-        authDomain: "watcherzone.firebaseapp.com",
-        databaseURL: "https://watcherzone-default-rtdb.firebaseio.com",
-        projectId: "watcherzone",
-        storageBucket: "watcherzone.firebasestorage.app",
-        messagingSenderId: "230041708754",
-        appId: "1:230041708754:web:88044026d1eb142a73e50b"
+        apiKey: "AIzaSyB68ACKzIXxsjOUPYIz-Kkr_BzTDHb0PTk",
+        databaseURL: "https://smart-data-fa459-default-rtdb.firebaseio.com",
+        projectId: "smart-data-fa459",
     };
-
-    // Initialize Firebase
     firebase.initializeApp(firebaseConfig);
-    const database = firebase.database();
-    const moviesRef = database.ref('movies').orderByKey(); 
-    const categoryRef = database.ref('categories'); 
+    const db = firebase.database();
 
-    const grid = document.getElementById("movieGrid");
-    const spinner = document.getElementById("loadingSpinner");
-    const prevBtn = document.getElementById("prevBtn");
-    const nextBtn = document.getElementById("nextBtn");
-    const paginationControls = document.querySelector('.pagination-controls');
+    let allContent = [];
+    let popularContent = [];
+    let filteredData = [];
     
     // Pagination Variables
-    const MOVIES_PER_PAGE = 10;
-    let allMovies = [];
-    let filteredMovies = []; 
-    let currentFilterType = 'all'; 
     let currentPage = 1;
-    let totalPages = 1;
-    
-    // Ad Links Array
+    const itemsPerPage = 10;
+
     const adLinks = [
+        "https://www.effectivegatecpm.com/uck9x0wk6?key=11fca88e86f0d00b67543ac7a783e47f",
+        "https://www.effectivegatecpm.com/zq5rzngg?key=a6fd58330a330c83ef94c1f7b6534856",
+        "https://www.effectivegatecpm.com/dqm7ya0myx?key=976aa4962ea641f87639dfc784b35969",
+        "https://www.effectivegatecpm.com/ht895npk?key=1dfeb60a3b20c38bc592436e3ccf9a82",
+        "https://www.effectivegatecpm.com/b7gn1rctv?key=a6df49ee2755a88078fad4af6ebd06bf",
         "https://www.effectivegatecpm.com/yz4z5szmf?key=73186bcddd33133e4b3c585292f10bde",
         "https://www.effectivegatecpm.com/s2mq62in?key=b17a7185381af8ce5baa404d8817d708",
         "https://www.effectivegatecpm.com/cm2npj3b6n?key=bbdca23bff7d7d54853f830d7c238ddf",
         "https://www.effectivegatecpm.com/uyz2avfp?key=af05da8c47fc0d441624224a14c722a6",
-        "https://www.effectivegatecpm.com/uz50mzu3f?key=efec633d14ae4a27a4a0aa1aa41c9c7e",
-        "https://www.effectivegatecpm.com/uck9x0wk6?key=11fca88e86f0d00b67543ac7a783e47f",
-        "https://www.effectivegatecpm.com/zq5rzngg?key=a6fd58330a330c83ef94c1f7b6534856",
-        "https://www.effectivegatecpm.com/dqm7ya0myx?key=976aa4962ea641f87639dfc784b35969"
+        "https://www.effectivegatecpm.com/uz50mzu3f?key=efec633d14ae4a27a4a0aa1aa41c9c7e"
     ];
 
-    function getRandomAdLink() {
-        if (adLinks.length === 0) return '#';
-        const randomIndex = Math.floor(Math.random() * adLinks.length);
-        return adLinks[randomIndex];
-    }
-    
-    const defaultCategories = {
-        'Bollywood': 'Bollywood',
-        'Hollywood': 'Hollywood',
-        'SouthIndian': 'South Indian',
-        'Punjabi': 'Punjabi',
-        'Pakistani': 'Pakistani',
-        'Other': 'Other'
-    };
-    
-    let currentVideoUrl = null; 
-    let currentDetailData = null; // To store current movie/series data for season switching
-    let currentDetailMovieKey = null; // Variable to hold the key of the currently opened movie detail
+    function initApp() {
+        document.getElementById('loadingSpinner').style.display = 'block';
 
-    // --- Navigation & Filter Logic ---
-    
-    function setFilter(filter, element) {
-        closeDetail(); 
-
-        document.querySelectorAll('.nav-item-btn').forEach(item => item.classList.remove('active'));
-        if(element) element.classList.add('active');
-        
-        if(document.getElementById('categoriesOverlay').style.display === 'block') {
-             closeCategoriesOverlay();
-        }
-
-        currentFilterType = filter;
-
-        // 2. Filter the content
-        if (filter === 'all') {
-            filteredMovies = allMovies;
-        } else if (filter === 'movie') {
-            filteredMovies = allMovies.filter(m => m.type === 'movie');
-        } else if (filter === 'series') {
-            filteredMovies = allMovies.filter(m => m.type === 'series');
-        } else if (filter === 'favorites') { 
-             filteredMovies = getFavoritesMovies();
-        } 
-        else {
-            // Category Filter
-            filteredMovies = allMovies.filter(m => m.category === filter);
-        }
-        
-        // 3. Recalculate pages and render
-        totalPages = Math.ceil(filteredMovies.length / MOVIES_PER_PAGE);
-        currentPage = 1;
-        renderPage(currentPage);
-        
-        // Show/Hide Pagination
-        if (totalPages <= 1 || filter === 'favorites') { 
-            paginationControls.style.display = 'none';
-        } else {
-            paginationControls.style.display = 'flex';
-        }
-    }
-    
-    function renderPage(pageNumber) {
-        document.getElementById("pageHeader").scrollIntoView({ behavior: 'smooth' });
-
-        const moviesArray = filteredMovies; 
-        const start = (pageNumber - 1) * MOVIES_PER_PAGE;
-        const end = start + MOVIES_PER_PAGE;
-        const moviesToShow = moviesArray.slice(start, end);
-
-        grid.innerHTML = '';
-        
-        if (moviesToShow.length === 0) {
-             let message = '';
-             if (currentFilterType === 'favorites') {
-                message = `Your **Favorites** list is empty. Add a movie or series by clicking "Add to Favorites" in the detail screen.`;
-             } else {
-                 const filterName = currentFilterType.charAt(0).toUpperCase() + currentFilterType.slice(1);
-                 message = `No **${filterName}** content found.`;
-             }
-             grid.innerHTML = `<p style="text-align: center; width: 100%; color: #aaa;">${message}</p>`;
-        } else {
-            moviesToShow.forEach((movie) => {
-                const categoryText = movie.category || 'Other'; 
-                const typeText = movie.type === 'series' ? 'Series' : 'Movie';
-                
-                // 💡 UPDATED HTML STRUCTURE: Image -> Title -> Badge
-                grid.innerHTML += `
-                    <div class="movie-card" onclick="openDetail('${movie.key}')" data-title="${movie.title}" data-category="${categoryText}">
-                        <img src="${movie.img}">
-                        <p>${movie.title}</p>
-                        <span class="category-badge">${categoryText} / ${typeText}</span> 
-                    </div>
-                `;
+        db.ref('categories').on('value', (snapshot) => {
+            const catDiv = document.getElementById('dynamicCategories');
+            catDiv.innerHTML = '';
+            let categories = [];
+            const excluded = ['Desi', 'Boy', 'Girl'];
+            snapshot.forEach(child => { categories.push(child.val()); });
+            categories.reverse().forEach(catName => {
+                if(!excluded.includes(catName)) {
+                    catDiv.innerHTML += `
+                        <div class="side-link" onclick="handleNavClick('${catName}', null); toggleSideMenu()">
+                            <i class="fas fa-folder-open"></i> ${catName}
+                        </div>`;
+                }
             });
+        });
+
+        db.ref('movies').on('value', (mSnap) => {
+            allContent = [];
+            mSnap.forEach(snap => { allContent.push({...snap.val(), key: snap.key}); });
+            allContent.reverse();
+
+            db.ref('popular_movies').on('value', (pSnap) => {
+                popularContent = [];
+                pSnap.forEach(snap => { popularContent.push({...snap.val(), key: snap.key}); });
+                popularContent.reverse();
+                
+                handleNavClick('all', document.querySelector('.nav-item-btn'));
+                document.getElementById('loadingSpinner').style.display = 'none';
+            });
+        });
+
+        setTimeout(() => { showAdPopup(null, 20); }, 10000);
+    }
+
+    function handleNavClick(filter, el) {
+        if(el) {
+            document.querySelectorAll('.nav-item-btn').forEach(b => b.classList.remove('active'));
+            el.classList.add('active');
         }
-
-        prevBtn.disabled = pageNumber === 1;
-        nextBtn.disabled = pageNumber === totalPages;
-    }
-
-    function goToPage(direction) {
-        const newPage = currentPage + direction;
         
-        if (newPage >= 1 && newPage <= totalPages) {
-            currentPage = newPage;
-            renderPage(currentPage);
-        }
-    }
-
-    // --- Favorites Logic (Unchanged) ---
-
-    function getFavorites() {
-        const favoritesJson = localStorage.getItem('pakMoviesFavorites');
-        return favoritesJson ? JSON.parse(favoritesJson) : [];
-    }
-
-    function getFavoritesMovies() {
-        const favoriteKeys = getFavorites();
-        return allMovies.filter(movie => favoriteKeys.includes(movie.key));
-    }
-
-    function isFavorite(movieKey) {
-        const favorites = getFavorites();
-        return favorites.includes(movieKey);
-    }
-
-    function toggleFavorite(movieKey) {
-        let favorites = getFavorites();
-        const favoriteBtn = document.getElementById('favoriteBtn');
-        
-        if (favorites.includes(movieKey)) {
-            // Remove from favorites
-            favorites = favorites.filter(key => key !== movieKey);
-            localStorage.setItem('pakMoviesFavorites', JSON.stringify(favorites));
-            
-            favoriteBtn.innerHTML = ' Add to Favorites';
-            favoriteBtn.classList.remove('added');
-            // Using console.log instead of alert
-            console.log('Removed from Favorites!');
-
+        currentPage = 1; // Reset to page 1 on new filter
+        let combined = [...allContent, ...popularContent];
+        if(filter === 'all') filteredData = combined;
+        else if(filter === 'popular') filteredData = popularContent;
+        else if(filter === 'favorites') {
+            const favs = JSON.parse(localStorage.getItem('favs') || '[]');
+            filteredData = combined.filter(i => favs.includes(i.key));
         } else {
-            // Add to favorites
-            favorites.push(movieKey);
-            localStorage.setItem('pakMoviesFavorites', JSON.stringify(favorites));
-            
-            favoriteBtn.innerHTML = '✅ Added to Favorites';
-            favoriteBtn.classList.add('added');
-            // Using console.log instead of alert
-            console.log('Successfully Added to Favorites!');
+            filteredData = combined.filter(i => i.category === filter);
         }
+        renderGrid();
     }
 
-    // --- Detail and Play Functions ---
-    
+    function renderGrid() {
+        const grid = document.getElementById('movieGrid');
+        
+        // Calculate items for current page
+        const start = (currentPage - 1) * itemsPerPage;
+        const end = start + itemsPerPage;
+        const paginatedItems = filteredData.slice(start, end);
+
+        // Add Animation
+        grid.classList.remove('fade-anim');
+        void grid.offsetWidth; // Trigger reflow
+        grid.classList.add('fade-anim');
+
+        grid.innerHTML = paginatedItems.map(item => `
+            <div class="movie-card" onclick="openDetail('${item.key}')">
+                <img src="${item.img}">
+                <p>${item.title}</p>
+                <span class="category-badge">${item.category || 'Content'}</span>
+            </div>
+        `).join('') || '<p style="grid-column:1/3; text-align:center; padding:20px;">No Content Found</p>';
+
+        updatePagination();
+    }
+
+    function changePage(step) {
+        currentPage += step;
+        renderGrid();
+        window.scrollTo({ top: 0, behavior: 'smooth' }); // Scroll to top smoothly
+    }
+
+    function updatePagination() {
+        const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+        document.getElementById('prevBtn').disabled = (currentPage === 1);
+        document.getElementById('nextBtn').disabled = (currentPage >= totalPages || totalPages === 0);
+        document.getElementById('pageNumber').innerText = `Page ${currentPage} / ${totalPages || 1}`;
+    }
+
+    function toggleCategoryMenu() {
+        const catDiv = document.getElementById('dynamicCategories');
+        const arrow = document.getElementById('catArrow');
+        catDiv.classList.toggle('show');
+        arrow.classList.toggle('rotate');
+    }
 
     function openDetail(key) {
-        const m = allMovies.find(movie => movie.key === key);
-        if (!m) return; 
+        const item = [...allContent, ...popularContent].find(i => i.key === key);
+        if(!item) return;
+
+        document.getElementById('modalTitle').innerText = item.title;
+        document.getElementById('modalImg').src = item.img;
+        document.getElementById('modalImg').style.display = 'block';
+        document.getElementById('inModalPlayerContainer').style.display = 'none';
         
-        currentDetailMovieKey = key; // Save the current movie key
-        currentDetailData = m; // Save the full data
-
-        document.getElementById("modalImg").src = m.img;
-        document.getElementById("modalTitle").innerText = m.title;
-        document.getElementById("modalDesc").innerText = m.desc || ''; 
-        
-        // Populate Genres and Year
-        document.getElementById("modalYear").innerText = `Year: ${m.year || 'N/A'}`;
-        document.getElementById("modalGenres").innerText = `Genres: ${m.genres || 'N/A'}`;
-
-
-        const movieLinksContainer = document.getElementById("movieLinksContainer");
-        const seriesEpisodeContainer = document.getElementById("seriesEpisodeContainer");
-        const episodeList = document.getElementById("episodeList");
-        const favoriteBtn = document.getElementById("favoriteBtn"); 
-        const downloadBtn = document.getElementById("downloadBtn"); 
-        const seasonSelect = document.getElementById("seasonSelect"); 
-
-        episodeList.innerHTML = '';
-        seasonSelect.innerHTML = '';
-
-        // Set up the Favorites button
-        favoriteBtn.setAttribute('data-key', key);
-        favoriteBtn.onclick = function() {
-            toggleFavorite(key);
-        };
-        
-        if (isFavorite(key)) {
-            favoriteBtn.innerHTML = '✅ Added to Favorites';
-            favoriteBtn.classList.add('added');
-        } else {
-            favoriteBtn.innerHTML = ' Add to Favorites';
-            favoriteBtn.classList.remove('added');
-        }
-
-
-        if (m.type === 'series') {
-            movieLinksContainer.style.display = 'flex'; 
-            seriesEpisodeContainer.style.display = 'block';
-
-            document.getElementById("playBtn").style.display = 'none';
-            downloadBtn.style.display = 'none'; 
-            
-            favoriteBtn.style.order = 1;
-            
-            // Populate Season Dropdown
-            const seasonsCount = m.seasons || 1;
-            for (let i = 1; i <= seasonsCount; i++) {
-                const option = document.createElement('option');
-                const seasonKey = `S${i}`;
-                option.value = seasonKey;
-                option.innerText = `Season ${i}`;
-                seasonSelect.appendChild(option);
-            }
-            
-            // Display episodes for the first season by default
-            displaySeasonEpisodes('S1'); 
-
-        } else {
-            seriesEpisodeContainer.style.display = 'none';
-            movieLinksContainer.style.display = 'flex'; 
-            
-            document.getElementById("playBtn").style.display = 'inline-block';
-            downloadBtn.style.display = 'inline-block'; // Show download for movie
-            
-            favoriteBtn.style.order = 3; 
-            
-            // Set up download button for movie
-            downloadBtn.onclick = function() {
-                // Pass the movie's download link
-                showAdPopup(m.download, 10, false); 
-            };
-
-            document.getElementById("playBtn").onclick = function () {
-                playMovie(m.play);
-            };
-        }
-        
-        // Ensure the modal is explicitly set to display block
-        document.getElementById("modal").style.display = "block";
-    }
-
-    // Function to display episodes based on selected season
-    function displaySeasonEpisodes(seasonKey) {
-        const episodeList = document.getElementById("episodeList");
-        episodeList.innerHTML = '';
-        
-        if (!currentDetailData || !currentDetailData.episodes || !currentDetailData.episodes[seasonKey]) {
-            episodeList.innerHTML = `<p style="color: #ffc107;">No episodes found for ${seasonKey}.</p>`;
-            return;
-        }
-
-        const seasonEpisodes = currentDetailData.episodes[seasonKey];
-        
-        const episodeKeys = Object.keys(seasonEpisodes).sort((a, b) => {
-             const numA = parseInt(a.replace('ep_', ''));
-             const numB = parseInt(b.replace('ep_', ''));
-             return numA - numB;
-        });
-
-        episodeKeys.forEach(epKey => {
-            const episode = seasonEpisodes[epKey];
-            const item = document.createElement('div');
-            item.className = 'episode-item';
-            item.innerHTML = `
-                <span class="ep-title">${episode.title}</span>
-                <div class="ep-actions">
-                    <button class="ep-play-btn" onclick="playMovie('${episode.link}')">Play</button>
-                    <button class="ep-download-btn" onclick="showAdPopup('${currentDetailData.download}', 10, false)">Download</button>
-                </div>
-            `;
-            episodeList.appendChild(item);
-        });
-    }
-
-
-    function closeDetail() {
-        document.getElementById("modal").style.display = "none";
-        currentDetailMovieKey = null; // Clear the current movie key
-        currentDetailData = null; // Clear the full data
-    }
-    
-    // Video Playback Functions
-    
-    // ✅ تبدیلی 2.1: ویڈیو کو فل سکرین میں کھولنے کا فنکشن
-    function openVideoPlayerFullScreen() {
-        const video = document.getElementById("videoPlayer");
-        if (video.requestFullscreen) {
-            video.requestFullscreen();
-        } else if (video.mozRequestFullScreen) { /* Firefox */
-            video.mozRequestFullScreen();
-        } else if (video.webkitRequestFullscreen) { /* Chrome, Safari and Opera */
-            video.webkitRequestFullscreen();
-        } else if (video.msRequestFullscreen) { /* IE/Edge */
-            video.msRequestFullscreen();
-        }
-        
-        // Note: For device rotation, an app-level setting is usually needed. 
-        // This JavaScript only handles the browser's fullscreen mode. 
-        // We assume the user's device/browser will handle the rotation in fullscreen.
-    }
-    
-    function playMovie(url) {
-        if (!url || url === '#') {
-            console.error("Play link is not available.");
-            return;
-        }
-
-        const video = document.getElementById("videoPlayer");
-        const source = document.getElementById("videoSource");
-
-        currentVideoUrl = url; 
-        source.src = url;
-        video.load();
-        
-        const savedTime = localStorage.getItem('videoProgress:' + url);
-        if (savedTime) {
-            video.currentTime = parseFloat(savedTime);
-            console.log(`Resuming video from: ${savedTime} seconds`);
-        } else {
-            video.currentTime = 0;
-        }
-
-        video.play();
-        document.getElementById("videoPopup").style.display = "flex";
-        
-        // ✅ تبدیلی 2.2: ویڈیو پلے ہونے کے بعد فل سکرین کھولیں 
-        video.onloadeddata = function() {
-            openVideoPlayerFullScreen();
+        document.getElementById('playBtn').onclick = () => {
+            if(item.play) {
+                document.getElementById('inModalVideoPlayer').src = item.play;
+                document.getElementById('inModalPlayerContainer').style.display = 'block';
+                document.getElementById('modalImg').style.display = 'none';
+                document.getElementById('inModalVideoPlayer').play();
+            } else { alert("Video link not available."); }
         };
 
-        video.ontimeupdate = function() {
-            if (!video.paused && !video.ended) {
-                 localStorage.setItem('videoProgress:' + url, Math.floor(video.currentTime)); 
-            }
-        };
+        document.getElementById('downloadBtn').onclick = () => { if(item.play) showAdPopup(item.play, 10); };
+
+        const otherBtn = document.getElementById('otherDownloadBtn');
+        if(item.otherDownloadLink && item.otherDownloadLink.length > 5) {
+            otherBtn.style.display = 'block';
+            otherBtn.onclick = () => window.open(item.otherDownloadLink, '_blank');
+        } else { otherBtn.style.display = 'none'; }
+        
+        updateFavBtn(key);
+        document.getElementById('favoriteBtn').onclick = () => toggleFav(key);
+        document.getElementById('modal').style.display = 'block';
     }
 
-    function closeVideo() {
-        const video = document.getElementById("videoPlayer");
-        
-        // Exit fullscreen if needed
-        if (document.exitFullscreen) {
-            document.exitFullscreen();
-        } else if (document.mozCancelFullScreen) { /* Firefox */
-            document.mozCancelFullScreen();
-        } else if (document.webkitExitFullscreen) { /* Chrome, Safari and Opera */
-            document.webkitExitFullscreen();
-        } else if (document.msExitFullscreen) { /* IE/Edge */
-            document.msExitFullscreen();
-        }
-        
-        if (video && !video.paused && currentVideoUrl) {
-            localStorage.setItem('videoProgress:' + currentVideoUrl, Math.floor(video.currentTime));
-            console.log(`Video stopped at: ${Math.floor(video.currentTime)} seconds. Saved.`);
-        }
-        
-        video.pause();
-        currentVideoUrl = null;
-
-        document.getElementById("videoPopup").style.display = "none";
-    }
-    
-    window.onbeforeunload = function() {
-        const video = document.getElementById("videoPlayer");
-        if (video && !video.paused && currentVideoUrl) {
-            localStorage.setItem('videoProgress:' + currentVideoUrl, Math.floor(video.currentTime));
-        }
-    };
-    // End Video Playback Functions
-
-
-    // --- Other Functions ---
-    
-    function showCategoriesOverlay(element) {
-        document.querySelectorAll('.nav-item-btn').forEach(item => item.classList.remove('active'));
-        if(element) element.classList.add('active');
-        
-        document.getElementById('categoriesOverlay').style.display = 'flex';
-        loadCategoriesForOverlay();
-    }
-    
-    function closeCategoriesOverlay() {
-         document.getElementById('categoriesOverlay').style.display = 'none';
-         const categoryBtn = document.querySelector('.nav-item-btn[data-target="categories"]');
-         if(categoryBtn) categoryBtn.classList.remove('active');
-    }
-
-    function loadCategoriesForOverlay() {
-        categoryRef.once('value', (snapshot) => {
-            let categories = snapshot.val() || {};
-            const categoryListDiv = document.getElementById('categoryListOverlay');
-            categoryListDiv.innerHTML = '';
-
-            const finalCategories = Object.keys(categories).length > 0 ? categories : defaultCategories;
-            
-            for (const key in finalCategories) {
-                const name = finalCategories[key];
-                const item = document.createElement('div');
-                item.className = 'category-item-btn';
-                item.innerText = name;
-                item.onclick = function() {
-                    const homeBtn = document.querySelector('.nav-item-btn[data-target="all"]');
-                    setFilter(name, homeBtn); 
-                    closeCategoriesOverlay(); 
-                };
-                categoryListDiv.appendChild(item);
-            }
-        });
-    }
-
-    // ✅ تبدیلی 1.4: loadAllMovies کو اپڈیٹ کیا گیا تاکہ یہ فلٹر سیٹ کرے اور ضرورت پڑنے پر ایلیمنٹ کو Active کرے۔
-    function loadAllMovies(element = null) {
-        spinner.style.display = 'block';
-        grid.innerHTML = '';
-
-        moviesRef.once('value', (snapshot) => {
-            allMovies = [];
-            snapshot.forEach((childSnapshot) => {
-                const content = childSnapshot.val();
-                content.key = childSnapshot.key;
-                content.type = content.type || (content.episodes ? 'series' : 'movie');
-                
-                // Ensure download link is set for the ad popup later
-                if (!content.download) {
-                    content.download = getRandomAdLink();
-                }
-                
-                allMovies.push(content);
-            });
-            
-            allMovies.reverse(); 
-
-            spinner.style.display = 'none';
-            
-            // اگر 'element' پاس کیا گیا ہے، تو اسے Home بٹن سمجھ کر 'all' فلٹر سیٹ کریں
-            // ورنہ، پہلے سے موجود Home بٹن کو تلاش کر کے اسے استعمال کریں۔
-            if (element && element.tagName !== 'H1') { // H1 کے لیے setFilter کال نہیں کرنا تاکہ وہ صرف ڈیٹا ریفریش کرے۔
-                setFilter('all', element);
-            } else {
-                 setFilter('all', document.querySelector('.nav-item-btn[data-target="all"]'));
-            }
-            
-            // سرچ بار کو صاف کریں
-            document.getElementById('searchBar').value = '';
-            
-            console.log("Movie data reloaded and Home filter applied.");
-        });
-    }
-
-
-    function filterMovies() {
-        const filterText = document.getElementById('searchBar').value.toUpperCase();
-        const cards = document.querySelectorAll('.movie-card');
-        
-        let visibleCount = 0;
-        cards.forEach(card => {
-            const title = card.getAttribute('data-title').toUpperCase();
-
-            if (title.includes(filterText)) {
-                card.style.display = "";
-                visibleCount++;
-            } else {
-                card.style.display = "none";
-            }
-        });
-        
-        paginationControls.style.display = filterText ? 'none' : (totalPages > 1 ? 'flex' : 'none');
-    }
-
-    /**
-     * Hides the ad popup and handles post-ad actions.
-     * @param {boolean} isInitialLoad - True if this is the first load ad (20s), false otherwise (10s download ad).
-     */
-    function hideAdPopup(isInitialLoad = true) {
-        document.getElementById('adPopup').style.display = 'none';
-        
-        if (isInitialLoad) {
-            console.log("Initial ad closed after 20s timer expired.");
-        } else {
-            // After 10s download ad, return to the detail screen 
-            if (currentDetailMovieKey) {
-                // Re-open the detail popup with the saved key
-                openDetail(currentDetailMovieKey); 
-                
-                // Scroll to the top of the detail modal
-                const modalContent = document.querySelector('.detail-content');
-                if (modalContent) {
-                    modalContent.scrollTop = 0;
-                }
-            } else {
-                 // Fallback to show the modal if key is somehow lost but modal was hidden
-                 document.getElementById("modal").style.display = "block";
-            }
-        }
-    }
-
-    /**
-     * Shows the ad popup with a specified link and duration.
-     * @param {string} url - The URL to load in the iframe. Uses a random ad link if null/undefined.
-     * @param {number} duration - The duration in seconds for the countdown. (Set to 20 for initial load).
-     * @param {boolean} isInitialLoad - True if this is the first load ad (20s), false for download ad (10s).
-     */
-    function showAdPopup(url = getRandomAdLink(), duration = 20, isInitialLoad = true) { 
-        if (!url || url === '#') {
-            url = getRandomAdLink();
-        }
-        
-        const adPopup = document.getElementById('adPopup');
-        const adIframe = document.getElementById('adIframe');
-        const adTimerSpan = document.getElementById('adTimer');
-        
-        // Hide detail screen if it's open for the download ad
-        if (!isInitialLoad) {
-            document.getElementById("modal").style.display = "none";
-        }
-
-        adIframe.src = url;
-        adPopup.style.display = 'flex';
-        
-        let timeLeft = duration; 
-        adTimerSpan.innerText = timeLeft;
-
-        const timer = setInterval(() => {
-            timeLeft -= 1;
-            adTimerSpan.innerText = timeLeft;
-
-            if (timeLeft <= 0) {
-                clearInterval(timer);
-                hideAdPopup(isInitialLoad);
+    function showAdPopup(url, time) {
+        const adDiv = document.getElementById("adPopup");
+        const timerEl = document.getElementById("adTimer");
+        const iframe = document.getElementById("adIframe");
+        const randomAd = adLinks[Math.floor(Math.random() * adLinks.length)];
+        adDiv.style.display = 'flex';
+        iframe.src = randomAd; 
+        let timeLeft = time;
+        timerEl.innerText = timeLeft;
+        const interval = setInterval(() => {
+            timeLeft--;
+            timerEl.innerText = timeLeft;
+            if(timeLeft <= 0) {
+                clearInterval(interval);
+                adDiv.style.display = 'none';
+                iframe.src = '';
+                if(url) window.open(url, '_blank');
             }
         }, 1000);
     }
-    
-    // مواد (موویز) لوڈ کرنے کا کام یہاں فوراً ہو گا، اور پاپ اپ صرف ٹائمر کے بعد ظاہر ہو گا۔
-    window.onload = function() {
-        // 1. مرکزی مواد (موویز) کو فوراً لوڈ کریں
-        loadAllMovies(); 
-        
-        console.log("Page loaded. Content loading immediately. Starting 10-second delay before initial ad popup...");
-        
-        // 2. 10 سیکنڈ کی تاخیر کے بعد پاپ اپ کو ظاہر کریں (20 سیکنڈ کی مدت کے ساتھ)
-        setTimeout(() => {
-            // 20 سیکنڈ کی مدت کا پاپ اپ ظاہر ہو گا
-            showAdPopup(getRandomAdLink(), 20, true); 
-        }, 10000); // 10000 milliseconds = 10 seconds delay
-    };
 
+    function toggleFav(key) {
+        let favs = JSON.parse(localStorage.getItem('favs') || '[]');
+        favs = favs.includes(key) ? favs.filter(k => k !== key) : [...favs, key];
+        localStorage.setItem('favs', JSON.stringify(favs));
+        updateFavBtn(key);
+    }
+
+    function updateFavBtn(key) {
+        const favs = JSON.parse(localStorage.getItem('favs') || '[]');
+        const btn = document.getElementById('favoriteBtn');
+        btn.innerText = favs.includes(key) ? "Saved" : "Add to Favorites";
+        btn.style.background = favs.includes(key) ? "#4caf50" : "#e91e63";
+    }
+
+    function closeDetail() {
+        document.getElementById('inModalVideoPlayer').pause();
+        document.getElementById('modal').style.display = 'none';
+    }
+
+    function toggleSideMenu() {
+        document.getElementById('sideMenu').classList.toggle('active');
+        document.querySelector('.side-overlay').classList.toggle('active');
+    }
+
+    initApp();
 </script>
-
-
 </body>
 </html>
