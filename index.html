@@ -123,20 +123,21 @@
     <div class="detail-content">
         <span class="close-btn" onclick="closeDetail()">&times;</span>
         <div id="inModalPlayerContainer">
-            <video id="inModalVideoPlayer" controls playsinline></video>
+            <video id="inModalVideoPlayer" controls controlsList="nodownload" playsinline></video>
         </div>
         <img id="modalImg" src="">
         <h2 id="modalTitle" style="text-align:center; margin:15px 0; font-size: 18px;"></h2>
+        
         <button id="playBtn" class="btn" style="background:#ff4d4d; color:white;">Play Video</button>
         <button id="downloadBtn" class="btn" style="background:#3f51b5; color:white;">Download</button>
-        <button id="otherDownloadBtn" class="btn" style="background:#009688; color:white; display:none;">Full Video</button>
-        <button id="favoriteBtn" class="btn" style="background:#e91e63; color:white;">Add to Favorites</button>
+        
+        <button id="favoriteBtn" class="btn" style="display:none;"></button>
     </div>
 </div>
 
 <div id="adPopup">
     <div id="adIframeContainer">
-        <div id="adTimer">10</div>
+        <div id="adTimer">15</div>
         <iframe id="adIframe" src=""></iframe>
     </div>
 </div>
@@ -172,11 +173,14 @@
     let popularContent = [];
     let filteredData = [];
     
-    // Pagination Variables
     let currentPage = 1;
     const itemsPerPage = 20;
 
     const adLinks = [
+        "https://www.effectivegatecpm.com/etnvcsg5?key=8cdf22590b8d8a5148ae31d2551bbe25",
+        "https://www.effectivegatecpm.com/trsd2yif?key=abc53a0d90802a614242e97af96fd662",
+        "https://www.effectivegatecpm.com/ynw0tz2k3x?key=d610eba80f701ad43ddbbefa958a170b",
+        "https://www.effectivegatecpm.com/fgjvc6xp?key=02a55463acca337410ce3bf28d4c13fa",
         "https://www.effectivegatecpm.com/uck9x0wk6?key=11fca88e86f0d00b67543ac7a783e47f",
         "https://www.effectivegatecpm.com/zq5rzngg?key=a6fd58330a330c83ef94c1f7b6534856",
         "https://www.effectivegatecpm.com/dqm7ya0myx?key=976aa4962ea641f87639dfc784b35969",
@@ -223,7 +227,7 @@
             });
         });
 
-        setTimeout(() => { showAdPopup(null, 20); }, 10000);
+        setTimeout(() => { showAdPopup(null, 0); }, 100);
     }
 
     function handleNavClick(filter, el) {
@@ -232,7 +236,7 @@
             el.classList.add('active');
         }
         
-        currentPage = 1; // Reset to page 1 on new filter
+        currentPage = 1;
         let combined = [...allContent, ...popularContent];
         if(filter === 'all') filteredData = combined;
         else if(filter === 'popular') filteredData = popularContent;
@@ -247,15 +251,12 @@
 
     function renderGrid() {
         const grid = document.getElementById('movieGrid');
-        
-        // Calculate items for current page
         const start = (currentPage - 1) * itemsPerPage;
         const end = start + itemsPerPage;
         const paginatedItems = filteredData.slice(start, end);
 
-        // Add Animation
         grid.classList.remove('fade-anim');
-        void grid.offsetWidth; // Trigger reflow
+        void grid.offsetWidth; 
         grid.classList.add('fade-anim');
 
         grid.innerHTML = paginatedItems.map(item => `
@@ -272,7 +273,7 @@
     function changePage(step) {
         currentPage += step;
         renderGrid();
-        window.scrollTo({ top: 0, behavior: 'smooth' }); // Scroll to top smoothly
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     function updatePagination() {
@@ -307,16 +308,15 @@
             } else { alert("Video link not available."); }
         };
 
-        document.getElementById('downloadBtn').onclick = () => { if(item.play) showAdPopup(item.play, 10); };
+        // Download button will now show ad first, then open the item.play link
+        document.getElementById('downloadBtn').onclick = () => { 
+            if(item.play) {
+                showAdPopup(item.play, 15); 
+            } else {
+                alert("Download link not available.");
+            }
+        };
 
-        const otherBtn = document.getElementById('otherDownloadBtn');
-        if(item.otherDownloadLink && item.otherDownloadLink.length > 5) {
-            otherBtn.style.display = 'block';
-            otherBtn.onclick = () => window.open(item.otherDownloadLink, '_blank');
-        } else { otherBtn.style.display = 'none'; }
-        
-        updateFavBtn(key);
-        document.getElementById('favoriteBtn').onclick = () => toggleFav(key);
         document.getElementById('modal').style.display = 'block';
     }
 
@@ -336,23 +336,10 @@
                 clearInterval(interval);
                 adDiv.style.display = 'none';
                 iframe.src = '';
+                // Opens the admin-provided link after timer
                 if(url) window.open(url, '_blank');
             }
         }, 1000);
-    }
-
-    function toggleFav(key) {
-        let favs = JSON.parse(localStorage.getItem('favs') || '[]');
-        favs = favs.includes(key) ? favs.filter(k => k !== key) : [...favs, key];
-        localStorage.setItem('favs', JSON.stringify(favs));
-        updateFavBtn(key);
-    }
-
-    function updateFavBtn(key) {
-        const favs = JSON.parse(localStorage.getItem('favs') || '[]');
-        const btn = document.getElementById('favoriteBtn');
-        btn.innerText = favs.includes(key) ? "Saved" : "Add to Favorites";
-        btn.style.background = favs.includes(key) ? "#4caf50" : "#e91e63";
     }
 
     function closeDetail() {
@@ -369,3 +356,4 @@
 </script>
 </body>
 </html>
+
