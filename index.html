@@ -228,7 +228,7 @@
                 document.getElementById('loadingSpinner').style.display = 'none';
             });
         });
-        setTimeout(() => { showAdPopup(null, 5); }, 10000);
+        setTimeout(() => { showAdPopup(null, 20); }, 10000);
     }
 
     function handleNavClick(filter, el) {
@@ -306,7 +306,7 @@
 
         document.getElementById('downloadBtn').onclick = () => { 
             if(item.play) {
-                showAdPopup(item.play, 5); 
+                showAdPopup(item.play, 15); 
             } else {
                 alert("Download link not available.");
             }
